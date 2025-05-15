@@ -1,10 +1,10 @@
 name: Run Nightly Benchmark
 run-name: Benchmark ${{ inputs.n8n_tag || 'nightly' }}
 
-on:
-  schedule:
-    - cron: '30 1,2,3 * * *'
-  workflow_dispatch:
+#on:
+ # schedule:
+ #   - cron: '30 1,2,3 * * *'
+#  workflow_dispatch:
     inputs:
       debug:
         description: 'Use debug logging'
@@ -102,3 +102,4 @@ jobs:
         if: always()
         run: pnpm destroy-cloud-env ${{ env.DEBUG }}
         working-directory: packages/@n8n/benchmark
+      
