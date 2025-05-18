@@ -5,7 +5,8 @@ import type {
 	ResourceMapperFieldsRequestDto,
 } from '@n8n/api-types';
 import * as nodeTypesApi from '@/api/nodeTypes';
-import { HTTP_REQUEST_NODE_TYPE, STORES, CREDENTIAL_ONLY_HTTP_NODE_VERSION } from '@/constants';
+import { HTTP_REQUEST_NODE_TYPE, CREDENTIAL_ONLY_HTTP_NODE_VERSION } from '@/constants';
+import { STORES } from '@n8n/stores';
 import type { NodeTypesByTypeNameAndVersion } from '@/Interface';
 import { addHeaders, addNodeTranslation } from '@/plugins/i18n';
 import { omit } from '@/utils/typesUtils';
@@ -21,7 +22,7 @@ import type {
 import { NodeConnectionTypes, NodeHelpers } from 'n8n-workflow';
 import { defineStore } from 'pinia';
 import { useCredentialsStore } from './credentials.store';
-import { useRootStore } from './root.store';
+import { useRootStore } from '@n8n/stores/useRootStore';
 import * as utils from '@/utils/credentialOnlyNodes';
 import { groupNodeTypesByNameAndType } from '@/utils/nodeTypes/nodeTypeTransforms';
 import { computed, ref } from 'vue';
@@ -135,14 +136,19 @@ export const useNodeTypesStore = defineStore(STORES.NODE_TYPES, () => {
 		};
 	});
 
-	const isNodesAsToolNode = computed(() => {
+	const isToolNode = computed(() => {
 		return (nodeTypeName: string) => {
 			const nodeType = getNodeType.value(nodeTypeName);
-			return !!(
-				nodeType &&
-				nodeType.outputs.includes(NodeConnectionTypes.AiTool) &&
-				nodeType.usableAsTool
-			);
+			if (nodeType?.outputs && Array.isArray(nodeType.outputs)) {
+				const outputTypes = nodeType.outputs.map(
+					(output: NodeConnectionType | INodeOutputConfiguration) =>
+						typeof output === 'string' ? output : output.type,
+				);
+
+				return outputTypes.includes(NodeConnectionTypes.AiTool);
+			} else {
+				return nodeType?.outputs.includes(NodeConnectionTypes.AiTool);
+			}
 		};
 	});
 
@@ -388,7 +394,7 @@ export const useNodeTypesStore = defineStore(STORES.NODE_TYPES, () => {
 		getCredentialOnlyNodeType,
 		isConfigNode,
 		isTriggerNode,
-		isNodesAsToolNode,
+		isToolNode,
 		isCoreNodeType,
 		visibleNodeTypes,
 		nativelyNumberSuffixedDefaults,
